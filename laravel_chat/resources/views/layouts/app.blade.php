@@ -232,82 +232,69 @@
         });
         Pusher.logToConsole = true;
 
-        {{--var pusher = new Pusher('{{env('PUSHER_APP_KEY')}}', {--}}
-            {{--cluster: '{{env('PUSHER_APP_CLUSTER')}}'--}}
-        {{--});--}}
 
-        // var channel = pusher.subscribe('messages');
-        // channel.bind('my-sendMessageEvent', function (data) {
-        //     // alert(JSON.stringify(data));
-        //     if (my_id == data.from) {
-        //         $('#' + data.to).click();
-        //     } else if (my_id == data.to) {
-        //         if (receiver_id == data.from) {
-        //             // if receiver is selected, reload the selected user ...
-        //             $('#' + data.from).click();
-        //         } else {
-        //             // if receiver is not seleted, add notification for that user
-        //             var pending = parseInt($('#' + data.from).find('.pending').html());
-        //
-        //             if (pending) {
-        //                 $('#' + data.from).find('.pending').html(pending + 1);
-        //             } else {
-        //                 $('#' + data.from).append('<span class="pending">1</span>');
-        //             }
-        //         }
-        //     }
-        // });
+         Echo.private('receive-messages-'+my_id).listen('.sendMessageEvent',function (data) {
 
-        Echo.private('receive-messages-'+my_id).listen('.sendMessageEvent',function (data) {
-        });
+         });
 
         $('.user').click(function () {
             $('.user').removeClass('active')
             $(this).addClass('active')
             $(this).find('.pending').remove();
             if($(this).attr('id')!=receiver_id&&receiver_id!==''){
-                Echo.leaveChannel('send-messages-'+my_id+'-'+receiver_id);
+                Echo.leave('send-messages-'+my_id+'-'+receiver_id);
             }
-            Echo.private('send-messages-'+my_id+'-'+$(this).attr('id')).listen('.sendMessageEvent',function (data) {
 
-                var date = new Date();
-                $('.messages').append('<li class="message clearfix">\n' +
-                    '<div class="received">\n' +
-                    '<p>'+data.item.msg+'</p>\n' +
-                    '<p class="date">'+data.item.time+'</p>\n' +
-                    '</div>\n' +
-                    '\n' +
-                    '</li>');
-                scrollToBottomFunc();
-
-            });
-            receiver_id = $(this).attr('id')
-            $.ajax({
-                type: 'get',
-                url: 'message/' + receiver_id,
-                data: '',
-                cache: false,
-                success: function (data) {
-                    $('#messages').html(data)
+            if($(this).attr('id')!=receiver_id){
+                Echo.private('send-messages-'+my_id+'-'+$(this).attr('id')).listen('.sendMessageEvent',function (data) {
+                    $('.messages').append('<li class="message clearfix">\n' +
+                        '<div class="received">\n' +
+                        '<p>'+data.item.msg+'</p>\n' +
+                        '<p class="date">'+new Date(data.item.time).format('d M y, h:i a')+'</p>\n' +
+                        '</div>\n' +
+                        '\n' +
+                        '</li>');
                     scrollToBottomFunc();
-                }
-            })
+
+                });
+                receiver_id = $(this).attr('id')
+                $.ajax({
+                    type: 'get',
+                    url: 'message/' + receiver_id,
+                    data: '',
+                    cache: false,
+                    success: function (data) {
+                        $('#messages').html(data)
+                        scrollToBottomFunc();
+                    }
+                })
+            }
         })
 
         $(document).on('keyup', '.input-text input', function (e) {
             var message = $(this).val()
-
             if (e.keyCode == 13 && (message != '' && message.trim() != '') && receiver_id != '') {
                 $(this).val('')
 
-                var datastr = "receiver_id=" + receiver_id + "&message=" + message;
+                var date = "{{date('Y-m-d H:i:s')}}";
                 $.ajax({
                     type: 'post',
                     url: 'message',
-                    data: datastr,
+                    data: {
+                        receiver_id:receiver_id,
+                        message:message,
+                        time:date
+                    },
                     cache: false,
                     success: function (data) {
-
+                        $('.messages').append('<li class="message clearfix">\n' +
+                            '<div class="sent">\n' +
+                            '<p>'+message+'</p>\n' +
+                            '<p class="date">'+new Date(date).format('d M y, h:i a')+'</p>\n' +
+                            '</div>\n' +
+                            '\n' +
+                            '</li>');
+                        scrollToBottomFunc();
                     },
                     error: function (jqXHR, status, error) {
 

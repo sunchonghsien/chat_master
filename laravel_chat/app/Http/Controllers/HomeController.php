@@ -8,6 +8,7 @@ use App\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Pusher\Pusher;
 
 class HomeController extends Controller
@@ -55,12 +56,16 @@ class HomeController extends Controller
         $from    = Auth::id();
         $to      = request('receiver_id');
         $message = request('message');
+        $time = request('time');
 
         $data          = new Message();
         $data->from    = $from;
         $data->to      = $to;
         $data->message = $message;
         $data->is_read = 0;
+        if($time){
+            $data->created_at = $time;
+        }
         $data->save();
         $data->refresh();
         event(new SendMessage(['msg'=>$data->message,'time'=>$data->created_at],$from,$to));

@@ -30,6 +30,13 @@ class ReceiveMessage implements ShouldBroadcastNow
         $this->to=$to;
     }
 
+    public function broadcastAs()
+    {
+        //命名推播的事件
+        return 'receiveMessageEvent';
+
+    }
+
     /**
      * Get the channels the event should broadcast on.
      *
@@ -37,7 +44,7 @@ class ReceiveMessage implements ShouldBroadcastNow
      */
     public function broadcastOn()
     {
-        return new PrivateChannel('receive-messages-'.$this->from);
+        return new PrivateChannel('receive-messages-'.$this->to);
     }
 
     public function broadcastWith()

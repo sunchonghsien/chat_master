@@ -35,8 +35,9 @@ class MessageReadListener
             }else{
                 $event->count++;
             }
-            Redis::hSet("messageRead:$event->to:{$item['to']}",'count',$event->count);
-        }
 
+            Redis::hSet("messageRead:$event->to:$event->from",'count',$event->count);
+        }
+        return $event;
     }
 }

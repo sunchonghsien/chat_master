@@ -17,6 +17,8 @@ class MessageRead implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
+
+    public $from;
     public $to;
     public $count;
     public $msg;
@@ -26,9 +28,10 @@ class MessageRead implements ShouldBroadcastNow
      *
      * @return void
      */
-    public function __construct($to)
+    public function __construct($from,$to)
     {
         $this->to  = $to;
+        $this->from = $from;
     }
 
 

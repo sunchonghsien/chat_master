@@ -233,7 +233,7 @@
         Pusher.logToConsole = true;
 
 
-        Echo.private('receive-messages-' + my_id).listen('.sendMessageEvent', function (data) {
+        Echo.private('receive-messages-' + my_id).listen('.receiveMessageEvent', function (data) {
             console.log(data);
         }).listen('.messageReadEvent', function (data) {
             console.log(data);

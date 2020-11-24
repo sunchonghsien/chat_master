@@ -27,6 +27,6 @@ class SendMessageListener
     public function handle(SendMessage $event)
     {
         event(new ReceiveMessage($event->data['msg'],$event->from,$event->to));
-        event(new MessageRead($event->to));
+        event(new MessageRead($event->from,$event->to));
     }
 }

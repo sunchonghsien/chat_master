@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\ReceiveMessage;
 use App\Events\SendMessage;
 use App\Message;
 use App\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Str;
 use Pusher\Pusher;
 
@@ -48,7 +50,16 @@ class HomeController extends Controller
         })->orWhere(function ($query) use ($user_id, $my_id) {
             $query->where(['from' => $user_id, 'to' => $my_id]);
         })->get();
+
         return view('messages.index', ['messages' => $messages]);
+    }
+
+    public function room_send()
+    {
+        $to      = request('to');
+        $is_room = request('is_room');
+        $my_id   = Auth::id();
+        Redis::set("friend_room:$my_id", json_encode(['is_room' => $is_room, 'to' => $to]));
     }
 
     public function sendMessage()
@@ -56,18 +67,18 @@ class HomeController extends Controller
         $from    = Auth::id();
         $to      = request('receiver_id');
         $message = request('message');
-        $time = request('time');
+        $time    = request('time');
 
         $data          = new Message();
         $data->from    = $from;
         $data->to      = $to;
         $data->message = $message;
         $data->is_read = 0;
-        if($time){
+        if ($time) {
             $data->created_at = $time;
         }
         $data->save();
         $data->refresh();
-        event(new SendMessage(['msg'=>$data->message,'time'=>$data->created_at],$from,$to));
+        event(new SendMessage(['msg' => $data->message, 'time' => $data->created_at], $from, $to));
     }
 }

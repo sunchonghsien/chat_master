@@ -220,7 +220,7 @@
 </div>
 <script src="https://js.pusher.com/7.0/pusher.min.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
-
+<script src="js/date.format.js"></script>
 <script>
     var receiver_id = '';
     var my_id = "{{ Auth::id() }}";
@@ -233,24 +233,27 @@
         Pusher.logToConsole = true;
 
 
-         Echo.private('receive-messages-'+my_id).listen('.sendMessageEvent',function (data) {
-
-         });
+        Echo.private('receive-messages-' + my_id).listen('.sendMessageEvent', function (data) {
+            console.log(data);
+        }).listen('.messageReadEvent', function (data) {
+            console.log(data);
+        });
 
         $('.user').click(function () {
+            var is_room = 'in'
             $('.user').removeClass('active')
             $(this).addClass('active')
             $(this).find('.pending').remove();
-            if($(this).attr('id')!=receiver_id&&receiver_id!==''){
-                Echo.leave('send-messages-'+my_id+'-'+receiver_id);
+            if ($(this).attr('id') != receiver_id && receiver_id !== '') {
+                Echo.leave('send-messages-' + my_id + '-' + receiver_id);
             }
 
-            if($(this).attr('id')!=receiver_id){
-                Echo.private('send-messages-'+my_id+'-'+$(this).attr('id')).listen('.sendMessageEvent',function (data) {
+            if ($(this).attr('id') != receiver_id) {
+                Echo.private('send-messages-' + my_id + '-' + $(this).attr('id')).listen('.sendMessageEvent', function (data) {
                     $('.messages').append('<li class="message clearfix">\n' +
                         '<div class="received">\n' +
-                        '<p>'+data.item.msg+'</p>\n' +
-                        '<p class="date">'+new Date(data.item.time).format('d M y, h:i a')+'</p>\n' +
+                        '<p>' + data.item.msg + '</p>\n' +
+                        '<p class="date">' + new Date(data.item.time).format('d M y, h:i a') + '</p>\n' +
                         '</div>\n' +
                         '\n' +
                         '</li>');
@@ -258,6 +261,7 @@
 
                 });
                 receiver_id = $(this).attr('id')
+
                 $.ajax({
                     type: 'get',
                     url: 'message/' + receiver_id,
@@ -268,7 +272,20 @@
                         scrollToBottomFunc();
                     }
                 })
+            } else {
+                is_room = 'out';
+                $('#messages').html('')
             }
+
+            $.ajax({
+                type: 'post',
+                url: 'room_send',
+                data: {
+                    is_room: is_room,
+                    to: is_room == 'out' ? '' : receiver_id
+                },
+                cache: false,
+            })
         })
 
         $(document).on('keyup', '.input-text input', function (e) {
@@ -281,16 +298,16 @@
                     type: 'post',
                     url: 'message',
                     data: {
-                        receiver_id:receiver_id,
-                        message:message,
-                        time:date
+                        receiver_id: receiver_id,
+                        message: message,
+                        time: date
                     },
                     cache: false,
                     success: function (data) {
                         $('.messages').append('<li class="message clearfix">\n' +
                             '<div class="sent">\n' +
-                            '<p>'+message+'</p>\n' +
-                            '<p class="date">'+new Date(date).format('d M y, h:i a')+'</p>\n' +
+                            '<p>' + message + '</p>\n' +
+                            '<p class="date">' + new Date(date).format('d M y, h:i a') + '</p>\n' +
                             '</div>\n' +
                             '\n' +
                             '</li>');

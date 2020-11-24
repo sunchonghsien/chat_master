@@ -7,23 +7,26 @@ use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class ReceiveMessage
+class ReceiveMessage implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    private $msg;
-    private $to;
+    public $msg;
+    public $to;
+    public $from;
     /**
      * Create a new event instance.
      *
      * @return void
      */
-    public function __construct($msg,$to)
+    public function __construct($msg,$from,$to)
     {
         $this->msg=$msg;
+        $this->from =$from;
         $this->to=$to;
     }
 
@@ -34,11 +37,11 @@ class ReceiveMessage
      */
     public function broadcastOn()
     {
-        return new PrivateChannel('receive-messages-'.$this->to);
+        return new PrivateChannel('receive-messages-'.$this->from);
     }
 
     public function broadcastWith()
     {
-        return ['message' => $this->msg];
+        return ['message' => $this->msg,'to'=>$this->to];
     }
 }

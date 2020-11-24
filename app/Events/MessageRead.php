@@ -10,27 +10,31 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Redis;
 
-class SendMessage implements ShouldBroadcastNow
+class MessageRead implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
-    public $data;
-    public $to;
-    public $from;
 
+    public $to;
+    public $count;
+    public $msg;
 
     /**
      * Create a new event instance.
      *
-     * @param $data
-     * @param $from
-     * @param $to
+     * @return void
      */
-    public function __construct($data,$from, $to)
+    public function __construct($to)
     {
-        $this->data = $data;
-        $this->to   = $to;
-        $this->from = $from;
+        $this->to  = $to;
+    }
+
+
+    public function broadcastWhen()
+    {
+        return $this->count>0;
     }
 
     /**
@@ -40,18 +44,18 @@ class SendMessage implements ShouldBroadcastNow
      */
     public function broadcastOn()
     {
-        return new PrivateChannel("send-messages-$this->to-$this->from");
+        return new PrivateChannel('receive-messages-' . Auth::id());
     }
 
     public function broadcastAs()
     {
         //命名推播的事件
-        return 'sendMessageEvent';
+        return 'messageReadEvent';
 
     }
 
     public function broadcastWith()
     {
-        return ['item' => $this->data,'from'=>$this->from];
+        return ['count' => $this->count];
     }
 }

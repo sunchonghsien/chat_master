@@ -2,9 +2,9 @@
 
 namespace App\Listeners;
 
+use App\Events\MessageRead;
+use App\Events\ReceiveMessage;
 use App\Events\SendMessage;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Queue\InteractsWithQueue;
 
 class SendMessageListener
 {
@@ -26,6 +26,7 @@ class SendMessageListener
      */
     public function handle(SendMessage $event)
     {
-        //
+        event(new ReceiveMessage($event->data['msg'],$event->from,$event->to));
+        event(new MessageRead($event->to));
     }
 }

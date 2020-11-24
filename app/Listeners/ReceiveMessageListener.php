@@ -5,6 +5,7 @@ namespace App\Listeners;
 use App\Events\ReceiveMessage;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Support\Facades\Redis;
 
 class ReceiveMessageListener
 {
@@ -26,6 +27,7 @@ class ReceiveMessageListener
      */
     public function handle(ReceiveMessage $event)
     {
-        //
+        print_r($event);
+        Redis::hSet("messageRead:$event->from:$event->to",'msg',$event->msg);
     }
 }

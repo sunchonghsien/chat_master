@@ -28,5 +28,6 @@ class ReceiveMessageListener
     public function handle(ReceiveMessage $event)
     {
         Redis::hSet("messageRead:$event->to:$event->from",'msg',$event->msg);
+        Redis::hSet("messageRead:$event->from:$event->to",'msg',$event->msg);
     }
 }

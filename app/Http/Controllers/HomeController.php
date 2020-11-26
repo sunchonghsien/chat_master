@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\MessageRead;
 use App\Events\ReceiveMessage;
 use App\Events\SendMessage;
 use App\Message;
 use App\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
@@ -32,12 +34,23 @@ class HomeController extends Controller
      */
     public function index()
     {
-        // $users = User::where('id', '!=', Auth::id())->get();
-        $users = DB::select("select users.id, users.name, users.avatar, users.email, count(is_read) as unread 
-        from users LEFT  JOIN  messages ON users.id = messages.from and is_read = 0 and messages.to = " . Auth::id() . "
-        where users.id != " . Auth::id() . " 
-        group by users.id, users.name, users.avatar, users.email");
+         $users = User::query()->where('id', '!=', Auth::id())->get()->transform(function ($user){
 
+             $name = "messageRead:" . Auth::id() . ":$user->id";
+             $item = ['count' => 0, 'msg' => ''];
+             if (Redis::hKeys($name)) {
+                 $item = Redis::hGetAll($name);
+             }
+             $msg = Arr::get($item,'msg','');
+             $user->unread = Arr::get($item,'count',0);
+             $user->last_msg = !empty($msg)?$msg:$user->email;
+             return $user;
+         });
+//        $users = DB::select("select users.id, users.name, users.avatar, users.email, count(is_read) as unread
+//        from users LEFT  JOIN  messages ON users.id = messages.from and is_read = 0 and messages.to = " . Auth::id() . "
+//        where users.id != " . Auth::id() . "
+//        group by users.id, users.name, users.avatar, users.email");
+        Redis::del('friend_room:'.Auth::id());
         return view('home', ['users' => $users]);
     }
 
@@ -51,6 +64,7 @@ class HomeController extends Controller
             $query->where(['from' => $user_id, 'to' => $my_id]);
         })->get();
 
+        event(new MessageRead($user_id,$my_id));
         return view('messages.index', ['messages' => $messages]);
     }
 

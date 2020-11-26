@@ -81,9 +81,9 @@
             width: 18px;
             height: 18px;
             line-height: 18px;
-            padding-left: 5px;
             color: #ffffff;
             font-size: 12px;
+            text-align: center;
         }
 
         .media-left {
@@ -234,20 +234,24 @@
 
 
         Echo.private('receive-messages-' + my_id).listen('.receiveMessageEvent', function (data) {
-            console.log(data);
+            $('#'+data.from).find('.last_msg').html(data.message)
         }).listen('.messageReadEvent', function (data) {
-            console.log(data);
+           var pending = $('#'+data.from);
+            if(pending.find('.pending').html()==undefined){
+                pending.append('<span class="pending">'+data.count+'</span>')
+            }else{
+                pending.find('.pending').html(data.count)
+            }
         });
 
+        //获取消息
         $('.user').click(function () {
+
             var is_room = 'in'
             $('.user').removeClass('active')
             $(this).addClass('active')
             $(this).find('.pending').remove();
-            if ($(this).attr('id') != receiver_id && receiver_id !== '') {
-                Echo.leave('send-messages-' + my_id + '-' + receiver_id);
-            }
-
+            Echo.leave('send-messages-' + my_id + '-' + receiver_id);
             if ($(this).attr('id') != receiver_id) {
                 Echo.private('send-messages-' + my_id + '-' + $(this).attr('id')).listen('.sendMessageEvent', function (data) {
                     $('.messages').append('<li class="message clearfix">\n' +
@@ -272,10 +276,13 @@
                         scrollToBottomFunc();
                     }
                 })
+
             } else {
-                is_room = 'out';
                 $('#messages').html('')
+                is_room = 'out';
+                receiver_id = '';
             }
+
 
             $.ajax({
                 type: 'post',
@@ -288,6 +295,7 @@
             })
         })
 
+        // 发送消息
         $(document).on('keyup', '.input-text input', function (e) {
             var message = $(this).val()
             if (e.keyCode == 13 && (message != '' && message.trim() != '') && receiver_id != '') {
@@ -312,6 +320,8 @@
                             '\n' +
                             '</li>');
                         scrollToBottomFunc();
+
+                        $('#'+receiver_id).find('.last_msg').html(message)
                     },
                     error: function (jqXHR, status, error) {
 

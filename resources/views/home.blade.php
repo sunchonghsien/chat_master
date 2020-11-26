@@ -19,7 +19,7 @@
 
                                     <div class="media-body">
                                         <p class="name">{{ $user->name }}</p>
-                                        <p class="email">{{ $user->email }}</p>
+                                        <p class="last_msg">{{ $user->last_msg }}</p>
                                     </div>
                                 </div>
                             </li>

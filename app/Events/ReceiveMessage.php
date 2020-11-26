@@ -49,6 +49,6 @@ class ReceiveMessage implements ShouldBroadcastNow
 
     public function broadcastWith()
     {
-        return ['message' => $this->msg,'to'=>$this->to];
+        return ['message' => $this->msg,'from'=>$this->from];
     }
 }

@@ -28,18 +28,17 @@ class MessageRead implements ShouldBroadcastNow
      *
      * @return void
      */
-    public function __construct($from,$to)
+    public function __construct($from,$to,$count = 0)
     {
         $this->to  = $to;
         $this->from = $from;
+        $this->count = $count;
     }
-
 
     public function broadcastWhen()
     {
         return $this->count>0;
     }
-
     /**
      * Get the channels the event should broadcast on.
      *
@@ -47,7 +46,7 @@ class MessageRead implements ShouldBroadcastNow
      */
     public function broadcastOn()
     {
-        return new PrivateChannel('receive-messages-' . Auth::id());
+        return new PrivateChannel('receive-messages-' . $this->to);
     }
 
     public function broadcastAs()
@@ -59,6 +58,6 @@ class MessageRead implements ShouldBroadcastNow
 
     public function broadcastWith()
     {
-        return ['count' => $this->count];
+        return ['count' => $this->count,'from'=>$this->from];
     }
 }

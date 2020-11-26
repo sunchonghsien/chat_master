@@ -27,17 +27,6 @@ class MessageReadListener
      */
     public function handle(MessageRead $event)
     {
-        $item = json_decode(Redis::get('friend_room:'.$event->to)??'{}',true);
-        if(isset($item['is_room'])){
-            $event->count = Redis::hGet("messageRead:$event->to:{$item['to']}",'count');
-            if($item['is_room']!='out'&&$item['to']==Auth::id()){
-                $event->count = 0;
-            }else{
-                $event->count++;
-            }
-
-            Redis::hSet("messageRead:$event->to:$event->from",'count',$event->count);
-        }
-        return $event;
+        Redis::hSet("messageRead:$event->to:$event->from",'count',$event->count);
     }
 }

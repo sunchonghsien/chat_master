@@ -48,6 +48,16 @@ class SendMessageListener
             }
         }
 
+        $send_key = 'historical_record:'.($event->from>$event->to?"{$event->to}:{$event->from}":"{$event->from}:{$event->to}");
+        if(Redis::hLen($send_key)>10){
+           $list = Redis::hGetAll("$send_key:*");
+            print_r($list);
+        }else{
+           $mic = microtime(true)*10000;
+            Redis::hSet("$send_key:$mic",'message',$event->data['msg']);
+            Redis::hSet("$send_key:$mic",'is_read',0);
+            Redis::hSet("$send_key:$mic",'created_at',$event->data['time']);
+        }
         event(new MessageRead($event->from, $event->to, $count));
         event(new ReceiveMessage($event->data['msg'], $event->from, $event->to));
     }

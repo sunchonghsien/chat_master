@@ -57,12 +57,15 @@ class HomeController extends Controller
     public function getMessage($user_id)
     {
         $my_id = Auth::id();
-        Message::where(['from' => $user_id, 'to' => $my_id])->update(['is_read' => 1]);
-        $messages = Message::where(function ($query) use ($user_id, $my_id) {
-            $query->where(['from' => $my_id, 'to' => $user_id]);
-        })->orWhere(function ($query) use ($user_id, $my_id) {
-            $query->where(['from' => $user_id, 'to' => $my_id]);
-        })->get();
+        $send_key = 'historical_record:'.($user_id>$my_id?"$my_id:$user_id":"$user_id:$my_id");
+        $messages = Redis::hGetAll("$send_key:*");
+        print_r($send_key);
+//        Message::where(['from' => $user_id, 'to' => $my_id])->update(['is_read' => 1]);
+//        $messages = Message::where(function ($query) use ($user_id, $my_id) {
+//            $query->where(['from' => $my_id, 'to' => $user_id]);
+//        })->orWhere(function ($query) use ($user_id, $my_id) {
+//            $query->where(['from' => $user_id, 'to' => $my_id]);
+//        })->get();
 
         event(new MessageRead($user_id,$my_id));
         return view('messages.index', ['messages' => $messages]);
@@ -82,17 +85,6 @@ class HomeController extends Controller
         $to      = request('receiver_id');
         $message = request('message');
         $time    = request('time');
-
-        $data          = new Message();
-        $data->from    = $from;
-        $data->to      = $to;
-        $data->message = $message;
-        $data->is_read = 0;
-        if ($time) {
-            $data->created_at = $time;
-        }
-        $data->save();
-        $data->refresh();
-        event(new SendMessage(['msg' => $data->message, 'time' => $data->created_at], $from, $to));
+        event(new SendMessage(['msg' => $message, 'time' => $time], $from, $to));
     }
 }

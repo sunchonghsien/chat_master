@@ -224,6 +224,8 @@
 <script>
     var receiver_id = '';
     var my_id = "{{ Auth::id() }}";
+    var page = 1;
+
     $(document).ready(function () {
         $.ajaxSetup({
             headers: {
@@ -236,7 +238,7 @@
         Echo.private('receive-messages-' + my_id).listen('.receiveMessageEvent', function (data) {
             $('#'+data.from).find('.last_msg').html(data.message)
         }).listen('.messageReadEvent', function (data) {
-           var pending = $('#'+data.from);
+            var pending = $('#'+data.from);
             if(pending.find('.pending').html()==undefined){
                 pending.append('<span class="pending">'+data.count+'</span>')
             }else{
@@ -244,9 +246,10 @@
             }
         });
 
+
         //获取消息
         $('.user').click(function () {
-
+            page = 1;
             var is_room = 'in'
             $('.user').removeClass('active')
             $(this).addClass('active')
@@ -294,6 +297,35 @@
                 cache: false,
             })
         })
+        $(document).on('click', 'p[class=more-msg]', function (e) {
+            $.ajax({
+                type: 'get',
+                url: 'historical',
+                data: {
+                    page:++page,
+                    receiver_id: receiver_id,
+                },
+                cache: false,
+                success: function (data) {
+                    // $('.messages').before('<li class="message clearfix">\n' +
+                    //     '<div class="sent">\n' +
+                    //     '<p>' + message + '</p>\n' +
+                    //     '<p class="date">' + new Date(date).format('d M y, h:i a') + '</p>\n' +
+                    //     '</div>\n' +
+                    //     '\n' +
+                    //     '</li>');
+                    // scrollToBottomFunc();
+                    //
+                    // $('#'+receiver_id).find('.last_msg').html(message)
+                },
+                error: function (jqXHR, status, error) {
+
+                },
+                complete: function () {
+                    scrollToBottomFunc();
+                }
+            })
+        })
 
         // 发送消息
         $(document).on('keyup', '.input-text input', function (e) {
@@ -332,6 +364,8 @@
                 })
             }
         })
+
+
     });
 
     // make a function to scroll down auto

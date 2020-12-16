@@ -156,6 +156,7 @@
         input[type=text]:focus {
             border: 1px solid #aaaaaa;
         }
+
     </style>
 </head>
 <body>
@@ -275,7 +276,7 @@
                     data: '',
                     cache: false,
                     success: function (data) {
-                        $('#messages').html(data)
+                        $('#messages').html(data);
                         scrollToBottomFunc();
                     }
                 })
@@ -297,6 +298,8 @@
                 cache: false,
             })
         })
+
+
         $(document).on('click', 'p[class=more-msg]', function (e) {
             $.ajax({
                 type: 'get',
@@ -307,22 +310,21 @@
                 },
                 cache: false,
                 success: function (data) {
-                    // $('.messages').before('<li class="message clearfix">\n' +
-                    //     '<div class="sent">\n' +
-                    //     '<p>' + message + '</p>\n' +
-                    //     '<p class="date">' + new Date(date).format('d M y, h:i a') + '</p>\n' +
-                    //     '</div>\n' +
-                    //     '\n' +
-                    //     '</li>');
-                    // scrollToBottomFunc();
-                    //
-                    // $('#'+receiver_id).find('.last_msg').html(message)
+                    var msg_list =new Array();
+                    data.forEach(item=>{
+                      var msg = '<li class="message clearfix">\n' +
+                        '<div class="'+(item.from==my_id?'sent':'received')+'">\n' +
+                        '<p>' + item.message + '</p>\n' +
+                        '<p class="date">' + new Date(item.created_at).format('d M y, h:i a') + '</p>\n' +
+                    '</div>\n' +
+                        '\n' +
+                        '</li>'
+                        msg_list.unshift(msg)
+                    });
+                    $('.messages').prepend(msg_list.join(''));
                 },
                 error: function (jqXHR, status, error) {
 
-                },
-                complete: function () {
-                    scrollToBottomFunc();
                 }
             })
         })
@@ -364,7 +366,6 @@
                 })
             }
         })
-
 
     });
 

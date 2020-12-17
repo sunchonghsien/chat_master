@@ -63,18 +63,20 @@ class HomeController extends Controller
         $len         = Redis::lLen($send_key);
         $page        *= $size;
         $index       = bcsub($len, $page);
-        $page_size   = bcsub(bcadd($index, $page), $parent_page);
-
+        $page_size   = bcsub($len, $parent_page)-1;
+        $messages = collect();
         if ($page_size > 0) {
-            $messages = Redis::lRange($send_key, $index, $page_size);
-            if (!empty($messages)) {
-                foreach ($messages as &$item) {
-                    $item = json_decode($item, true);
-                }
+            $messages->wrap(Redis::lRange($send_key, $index, $page_size))
+                ->sortKeysDesc()->values();
+
+            if ($messages->isNotEmpty()) {
+                $messages->transform(function ($value){
+                    return json_decode($value, true);
+                });
             }
         }
 
-        if (empty($messages)) {
+        if ($messages->isEmpty()) {
             $messages = Message::query()->where(function ($query) use ($my_id, $receiver_id) {
                 $query->where(['from' => $my_id, 'to' => $receiver_id])->orWhere([
                     'from' => $receiver_id,
@@ -84,6 +86,7 @@ class HomeController extends Controller
                 ->get(['message', 'created_at', 'from', 'to'])
             ;
         }
+
         return $messages;
     }
 

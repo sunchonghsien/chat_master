@@ -157,6 +157,14 @@
             border: 1px solid #aaaaaa;
         }
 
+        #more-msg{
+            text-align: center;
+            cursor:pointer;
+        }
+        p[id=more-msg]:hover{
+            font-weight: bold;
+        }
+
     </style>
 </head>
 <body>
@@ -233,16 +241,18 @@
                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
             }
         });
+
+        $('#messages').hide();
         Pusher.logToConsole = true;
 
 
         Echo.private('receive-messages-' + my_id).listen('.receiveMessageEvent', function (data) {
-            $('#'+data.from).find('.last_msg').html(data.message)
+            $('#' + data.from).find('.last_msg').html(data.message)
         }).listen('.messageReadEvent', function (data) {
-            var pending = $('#'+data.from);
-            if(pending.find('.pending').html()==undefined){
-                pending.append('<span class="pending">'+data.count+'</span>')
-            }else{
+            var pending = $('#' + data.from);
+            if (pending.find('.pending').html() == undefined) {
+                pending.append('<span class="pending">' + data.count + '</span>')
+            } else {
                 pending.find('.pending').html(data.count)
             }
         });
@@ -276,13 +286,15 @@
                     data: '',
                     cache: false,
                     success: function (data) {
-                        $('#messages').html(data);
+                        $('.message-wrapper').html(data);
+                        $('#messages').show();
                         scrollToBottomFunc();
                     }
                 })
 
             } else {
-                $('#messages').html('')
+                $('.message-wrapper').html('')
+                $('#messages').hide();
                 is_room = 'out';
                 receiver_id = '';
             }
@@ -299,29 +311,33 @@
             })
         })
 
-
-        $(document).on('click', 'p[class=more-msg]', function (e) {
+        //历史纪录
+        $(document).on('click', 'p[id=more-msg]', function (e) {
             $.ajax({
                 type: 'get',
                 url: 'historical',
                 data: {
-                    page:++page,
+                    page: ++page,
                     receiver_id: receiver_id,
                 },
                 cache: false,
                 success: function (data) {
-                    var msg_list =new Array();
-                    data.forEach(item=>{
-                      var msg = '<li class="message clearfix">\n' +
-                        '<div class="'+(item.from==my_id?'sent':'received')+'">\n' +
-                        '<p>' + item.message + '</p>\n' +
-                        '<p class="date">' + new Date(item.created_at).format('d M y, h:i a') + '</p>\n' +
-                    '</div>\n' +
-                        '\n' +
-                        '</li>'
+                    var msg_list = new Array();
+                    data.forEach(item => {
+                        var msg = '<li class="message clearfix">\n' +
+                            '<div class="' + (item.from == my_id ? 'sent' : 'received') + '">\n' +
+                            '<p>' + item.message + '</p>\n' +
+                            '<p class="date">' + new Date(item.created_at).format('d M y, h:i a') + '</p>\n' +
+                            '</div>\n' +
+                            '\n' +
+                            '</li>'
                         msg_list.unshift(msg)
                     });
+
+                    var height = $('.message-wrapper').get(0).scrollHeight;
                     $('.messages').prepend(msg_list.join(''));
+                    $('.message-wrapper').get(0).scrollTop = $('.message-wrapper').get(0).scrollHeight-height;
+
                 },
                 error: function (jqXHR, status, error) {
 
@@ -355,7 +371,7 @@
                             '</li>');
                         scrollToBottomFunc();
 
-                        $('#'+receiver_id).find('.last_msg').html(message)
+                        $('#' + receiver_id).find('.last_msg').html(message)
                     },
                     error: function (jqXHR, status, error) {
 
@@ -367,7 +383,9 @@
             }
         })
 
+
     });
+
 
     // make a function to scroll down auto
     function scrollToBottomFunc() {

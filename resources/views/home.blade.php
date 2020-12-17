@@ -5,7 +5,7 @@
         <div class="row">
             <div class="col-md-4">
                 <div class="user-wrapper">
-                    <ul class="users">
+                    <ul class="users" id="test">
                         @foreach($users as $user)
                             <li class="user" id="{{ $user->id }}">
                                 @if($user->unread)
@@ -28,8 +28,13 @@
                 </div>
             </div>
 
-            <div class="col-md-8" id="messages">
+            <div class="col-md-8 message-scroll" id="messages">
+                <div class="message-wrapper">
+                </div>
 
+                <div class="input-text">
+                    <input type="text" name="message" class="submit">
+                </div>
             </div>
         </div>
     </div>

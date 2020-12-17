@@ -1,6 +1,6 @@
-<div class="message-wrapper">
+
     @if(count($messages)>=10)
-        <p style="text-align: center;cursor:pointer" class="more-msg">显示更多...</p>
+        <p id="more-msg">显示更多...</p>
     @endif
     <ul class="messages">
         @foreach($messages as $message)
@@ -13,9 +13,4 @@
             </li>
         @endforeach
     </ul>
-</div>
-
-<div class="input-text">
-    <input type="text" name="message" class="submit">
-</div>
 

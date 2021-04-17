@@ -61,6 +61,7 @@
             cursor: pointer;
             padding: 5px 0;
             position: relative;
+            background: #F8FAFC;
         }
 
         .user:hover {
@@ -101,7 +102,7 @@
 
         .message-wrapper {
             padding: 10px;
-            height: 536px;
+            height: 620px;
             background: #eeeeee;
         }
 
@@ -157,11 +158,13 @@
             border: 1px solid #aaaaaa;
         }
 
-        #more-msg{
-            text-align: center;
-            cursor:pointer;
+        #more-msg {
+            cursor: pointer;
+            width: 75px;
+            height: 20px;
         }
-        p[id=more-msg]:hover{
+
+        p[id=more-msg]:hover {
             font-weight: bold;
         }
 
@@ -234,8 +237,33 @@
     var receiver_id = '';
     var my_id = "{{ Auth::id() }}";
     var page = 1;
+    var user_list = [];
 
     $(document).ready(function () {
+       var doc = new DOMParser().parseFromString('{{$users??'{}'}}','text/html');
+        user_list = JSON.parse(doc.documentElement.textContent);
+        var _ajax = $.ajax;
+        $.ajax = function (opt) {
+            var fn = {
+                error: function (XMLHttpRequest, textStatus, errorThrown) {
+                }
+            }
+
+            if (opt.error) {
+                fn.error = opt.error;
+            }
+
+            var _opt = $.extend(opt, {
+                error: function (XMLHttpRequest, textStatus, errorThrown) {
+                    if (XMLHttpRequest.status == 401) {
+                        window.location.href = 'login';
+                    }
+                    fn.error(XMLHttpRequest, textStatus, errorThrown);
+                }
+            });
+            return _ajax(_opt);
+        };
+
         $.ajaxSetup({
             headers: {
                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -247,9 +275,10 @@
 
 
         Echo.private('receive-messages-' + my_id).listen('.receiveMessageEvent', function (data) {
-            $('#' + data.from).find('.last_msg').html(data.message)
+            console.info(data);
+            $('.record>li[id='+data.from+']').find('.last_msg').html(data.message)
         }).listen('.messageReadEvent', function (data) {
-            var pending = $('#' + data.from);
+            var pending = $('.record>li[id='+data.from+']');
             if (pending.find('.pending').html() == undefined) {
                 pending.append('<span class="pending">' + data.count + '</span>')
             } else {
@@ -258,57 +287,15 @@
         });
 
 
+        $('.user-info').on('click', function () {
+            $('.user-info').removeClass('active')
+            getMsg.call(this);
+        })
+
         //获取消息
-        $('.user').click(function () {
-            page = 1;
-            var is_room = 'in'
-            $('.user').removeClass('active')
-            $(this).addClass('active')
-            $(this).find('.pending').remove();
-            Echo.leave('send-messages-' + my_id + '-' + receiver_id);
-            if ($(this).attr('id') != receiver_id) {
-                Echo.private('send-messages-' + my_id + '-' + $(this).attr('id')).listen('.sendMessageEvent', function (data) {
-                    $('.messages').append('<li class="message clearfix">\n' +
-                        '<div class="received">\n' +
-                        '<p>' + data.item.msg + '</p>\n' +
-                        '<p class="date">' + new Date(data.item.time).format('d M y, h:i a') + '</p>\n' +
-                        '</div>\n' +
-                        '\n' +
-                        '</li>');
-                    scrollToBottomFunc();
-
-                });
-                receiver_id = $(this).attr('id')
-
-                $.ajax({
-                    type: 'get',
-                    url: 'message/' + receiver_id,
-                    data: '',
-                    cache: false,
-                    success: function (data) {
-                        $('.message-wrapper').html(data);
-                        $('#messages').show();
-                        scrollToBottomFunc();
-                    }
-                })
-
-            } else {
-                $('.message-wrapper').html('')
-                $('#messages').hide();
-                is_room = 'out';
-                receiver_id = '';
-            }
-
-
-            $.ajax({
-                type: 'post',
-                url: 'room_send',
-                data: {
-                    is_room: is_room,
-                    to: is_room == 'out' ? '' : receiver_id
-                },
-                cache: false,
-            })
+        $('.user-msg').on('click', function () {
+            $('.user-msg').removeClass('active')
+            getMsg.call(this);
         })
 
         //历史纪录
@@ -336,7 +323,7 @@
 
                     var height = $('.message-wrapper').get(0).scrollHeight;
                     $('.messages').prepend(msg_list.join(''));
-                    $('.message-wrapper').get(0).scrollTop = $('.message-wrapper').get(0).scrollHeight-height;
+                    $('.message-wrapper').get(0).scrollTop = $('.message-wrapper').get(0).scrollHeight - height;
 
                 },
                 error: function (jqXHR, status, error) {
@@ -371,7 +358,7 @@
                             '</li>');
                         scrollToBottomFunc();
 
-                        $('#' + receiver_id).find('.last_msg').html(message)
+                        $('.record>li[id='+receiver_id+']').find('.last_msg').html(message)
                     },
                     error: function (jqXHR, status, error) {
 
@@ -383,7 +370,26 @@
             }
         })
 
+        $('#search_friend_name').keyup(function (e) {
+           var arrBirds = user_list.filter(item=>item.name.toLowerCase().includes(e.target.value.toLowerCase()))
 
+           $('.users >li').hide();
+
+            arrBirds.forEach(item=>{
+                $('.users >li[id='+item.id+']').show()
+            });
+
+           if(!e.target.value){
+               $('.users >li').show();
+           }
+
+            // if(delay){
+            //     clearTimeout(delay);
+            // }
+            // delay = setTimeout(function () {
+            //
+            // });
+        })
     });
 
 
@@ -392,6 +398,59 @@
         $('.message-wrapper').animate({
             scrollTop: $('.message-wrapper').get(0).scrollHeight
         }, 50);
+    }
+
+    function getMsg() {
+        page = 1;
+        var is_room = 'in'
+        $(this).addClass('active')
+        $(this).find('.pending').remove();
+        Echo.leave('send-messages-' + my_id + '-' + receiver_id);
+        if ($(this).attr('id') != receiver_id) {
+            Echo.private('send-messages-' + my_id + '-' + $(this).attr('id')).listen('.sendMessageEvent', function (data) {
+                $('.messages').append('<li class="message clearfix">\n' +
+                    '<div class="received">\n' +
+                    '<p>' + data.item.msg + '</p>\n' +
+                    '<p class="date">' + new Date(data.item.time).format('d M y, h:i a') + '</p>\n' +
+                    '</div>\n' +
+                    '\n' +
+                    '</li>');
+                scrollToBottomFunc();
+
+            });
+            receiver_id = $(this).attr('id')
+
+            $.ajax({
+                type: 'get',
+                url: 'message/' + receiver_id,
+                data: '',
+                cache: false,
+                success: function (data) {
+                    $('.message-wrapper').html(data);
+                    $('#messages').show();
+                    scrollToBottomFunc();
+                }
+            })
+
+        } else {
+            $('.message-wrapper').html('')
+            $('#messages').hide();
+            $(this).removeClass('active');
+            is_room = 'out';
+            receiver_id = '';
+        }
+
+
+        $.ajax({
+            type: 'post',
+            url: 'room_send',
+            data: {
+                is_room: is_room,
+                to: is_room == 'out' ? '' : receiver_id
+            },
+            cache: false,
+        })
+
     }
 
 </script>

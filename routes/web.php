@@ -19,9 +19,13 @@ Route::get('/', function () {
 });
 
 Auth::routes();
+Route::middleware('web')->group(function () {
 
-Route::get('/home', 'HomeController@index')->name('home');
-Route::get('/message/{id}', 'HomeController@getMessage')->name('message');
-Route::post('message', 'HomeController@sendMessage');
-Route::get('historical', 'HomeController@historical');
-Route::post('room_send', 'HomeController@room_send');
+    Route::middleware(['auth'])->group(function () {
+        Route::get('/home', 'HomeController@index')->name('home');
+        Route::get('/message/{id}', 'HomeController@getMessage')->name('message');
+        Route::post('message', 'HomeController@sendMessage');
+        Route::get('historical', 'HomeController@historical');
+        Route::post('room_send', 'HomeController@room_send');
+    });
+});

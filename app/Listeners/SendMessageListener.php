@@ -5,6 +5,7 @@ namespace App\Listeners;
 use App\Events\MessageRead;
 use App\Events\ReceiveMessage;
 use App\Events\SendMessage;
+use App\Helper\RedisKeyName;
 use App\Message;
 use App\User;
 use Illuminate\Support\Facades\Auth;
@@ -30,13 +31,13 @@ class SendMessageListener
      */
     public function handle(SendMessage $event)
     {
-        $name = 'friend_room:' . $event->to;
+        $name = RedisKeyName::friendRoom($event->to);
         $item = [];
         if (Redis::exists($name)) {
             $item = json_decode(Redis::get($name) ?? '{}', true);
         }
 
-        $msg_name = "messageRead:$event->to:$event->from";
+        $msg_name = RedisKeyName::messageRead($event->to,$event->from);
         $count    = !Redis::hExists($msg_name, 'count') ? 1 : Redis::hGet($msg_name, 'count');
         if ((isset($item['is_room']) && $item['is_room'] != 'out') && (isset($item['to']) && $item['to'] == Auth::id())) {
             $count = 0;
@@ -49,8 +50,9 @@ class SendMessageListener
                 }
             }
         }
+        Redis::hSet($msg_name,'count',$count);
 
-        $send_key = 'historical_record:' . ($event->from > $event->to ? "{$event->to}:{$event->from}" : "{$event->from}:{$event->to}");
+        $send_key = RedisKeyName::historicalRecord($event->to,$event->from);
 
         if (Redis::lLen($send_key) >= 100) {
             Redis::rPop($send_key);
@@ -66,7 +68,7 @@ class SendMessageListener
         Redis::rPush($send_key, json_encode($data));
         Message::query()->insert($data);
 
-        event(new MessageRead($event->from, $event->to, $count));
+        event(new MessageRead($event->from,$event->to, $count));
         event(new ReceiveMessage($event->data['msg'], $event->from, $event->to));
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Listeners;
 
 use App\Events\MessageRead;
+use App\Helper\RedisKeyName;
 use App\Message;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
@@ -28,9 +29,5 @@ class MessageReadListener
      */
     public function handle(MessageRead $event)
     {
-        if(!$event->count){
-            Message::query()->where(['from' => $event->from, 'to' => $event->to])->update(['is_read' => 1]);
-        }
-        Redis::hSet("messageRead:$event->to:$event->from",'count',$event->count);
     }
 }

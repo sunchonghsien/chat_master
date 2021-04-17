@@ -1,6 +1,6 @@
-
+@if(!empty($messages))
     @if(count($messages)>=10)
-        <p id="more-msg">显示更多...</p>
+        <div class="d-flex justify-content-center"><p class="" id="more-msg">显示更多...</p></div>
     @endif
     <ul class="messages">
         @foreach($messages as $message)
@@ -13,4 +13,4 @@
             </li>
         @endforeach
     </ul>
-
+@endif
